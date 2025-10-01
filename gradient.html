@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Advanced Gradient Generator</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #6a11cb, #2575fc, #ff8c00);
+      font-family: "Poppins", sans-serif;
+      transition: background 0.5s ease-in-out;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 2rem;
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+      text-align: center;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+      width: 400px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      color: white;
+      margin-bottom: 1rem;
+    }
+
+    .controls {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    select, button, input[type="range"] {
+      padding: 0.6rem 1rem;
+      border-radius: 12px;
+      border: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    select {
+      background: rgba(211, 202, 202, 0.2);
+      color: black;
+    }
+
+    button {
+      background:#28a745 ;
+      color: white;
+      transition: transform 0.2s, background 0.3s;
+    }
+
+    button:hover {
+      background: #218838 ;
+      transform: scale(1.05);
+    }
+
+    .slider-container {
+      margin-top: 1rem;
+      color: white;
+      font-size: 0.85rem;
+    }
+
+    #angle {
+      width: 100%;
+    }
+
+    #colorCode {
+      margin: 1rem 0;
+      padding: 0.7rem 1rem;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      font-family: monospace;
+      cursor: pointer;
+      user-select: all;
+      font-size: 0.85rem;
+    }
+
+    .copy-msg {
+      color: rgb(214, 24, 71);
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
+      display: none;
+    }
+
+    .history {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .preview {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 2px solid white;
+      transition: transform 0.2s;
+    }
+
+    .preview:hover {
+      transform: scale(1.1);
+    }
+
+    #downloadBtn {
+      margin-top: 1rem;
+      background: #ff8c00;
+    }
+
+
+#downloadBtn:hover {
+  background: #e07b00;
+}
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎨 Gradient Generator</h1>
+
+    <div class="controls">
+      <select id="direction" onchange="toggleSlider()">
+        <option value="90deg">Left → Right</option>
+        <option value="180deg">Top → Bottom</option>
+        <option value="135deg" selected>Diagonal</option>
+        <option value="circle">Radial</option>
+      </select>
+      <button onclick="generateGradient()">Generate</button>
+    </div>
+
+    <!-- Angle Slider -->
+    <div class="slider-container" id="sliderContainer">
+      <label for="angle">Angle: <span id="angleValue">135</span>°</label>
+      <input type="range" id="angle" min="0" max="360" value="135" oninput="updateAngle(this.value)">
+    </div>
+
+    <div id="colorCode">Click Generate!</div>
+    <div class="copy-msg" id="copyMsg">Copied to clipboard!</div>
+
+    <div class="history" id="history"></div>
+
+    <button id="downloadBtn" onclick="downloadGradient()">⬇️ Download PNG</button>
+  </div>
+
+  <script>
+    let history = [];
+    let currentAngle = 135;
+    let lastGradient = "";
+
+    function randomColor() {
+      return `#${Math.floor(Math.random() * 16777215)
+        .toString(16)
+        .padStart(6, "0")}`;
+    }
+
+    function updateAngle(value) {
+      currentAngle = value;
+      document.getElementById("angleValue").textContent = value;
+    }
+
+    function toggleSlider() {
+      const dir = document.getElementById("direction").value;
+      const sliderContainer = document.getElementById("sliderContainer");
+      if (dir === "circle") {
+        sliderContainer.style.display = "none";
+      } else {
+        sliderContainer.style.display = "block";
+      }
+    }
+
+    function generateGradient() {
+      const dir = document.getElementById("direction").value;
+      const color1 = randomColor();
+      const color2 = randomColor();
+      const color3 = randomColor();
+
+      const gradient =
+        dir === "circle"
+          ? `radial-gradient(circle, ${color1}, ${color2}, ${color3})`
+          : `linear-gradient(${currentAngle}deg, ${color1}, ${color2}, ${color3})`;
+
+      lastGradient = gradient;
+      document.body.style.background = gradient;
+
+      const cssCode = `background: ${gradient};`;
+      const colorCode = document.getElementById("colorCode");
+      colorCode.textContent = cssCode;
+
+      colorCode.onclick = () => {
+        navigator.clipboard.writeText(cssCode);
+        document.getElementById("copyMsg").style.display = "block";
+        setTimeout(() => {
+          document.getElementById("copyMsg").style.display = "none";
+        }, 2000);
+      };
+
+      // Save to history
+      history.unshift(gradient);
+      if (history.length > 5) history.pop();
+
+      // Render previews
+      const histContainer = document.getElementById("history");
+      histContainer.innerHTML = "";
+      history.forEach((g) => {
+        const box = document.createElement("div");
+        box.className = "preview";
+        box.style.background = g;
+        box.onclick = () => {
+          document.body.style.background = g;
+          colorCode.textContent = `background: ${g};`;
+          lastGradient = g;
+        };
+        histContainer.appendChild(box);
+      });
+    }
+
+    function downloadGradient() {
+      if (!lastGradient) {
+        alert("Please generate a gradient first!");
+        return;
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = 800;
+      canvas.height = 600;
+      const ctx = canvas.getContext("2d");
+
+      // Draw gradient on canvas
+      if (lastGradient.startsWith("radial")) {
+        const grad = ctx.createRadialGradient(400, 300, 50, 400, 300, 400);
+        const colors = lastGradient.match(/#[0-9a-f]{6}/gi);
+        grad.addColorStop(0, colors[0]);
+        grad.addColorStop(0.5, colors[1]);
+        grad.addColorStop(1, colors[2]);
+        ctx.fillStyle = grad;
+      } else {
+        const angleRad = (currentAngle * Math.PI) / 180;
+        const x = Math.cos(angleRad) * 400 + 400;
+        const y = Math.sin(angleRad) * 300 + 300;
+        const grad = ctx.createLinearGradient(400, 300, x, y);
+        const colors = lastGradient.match(/#[0-9a-f]{6}/gi);
+        grad.addColorStop(0, colors[0]);
+        grad.addColorStop(0.5, colors[1]);
+        grad.addColorStop(1, colors[2]);
+        ctx.fillStyle = grad;
+      }
+
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Download image
+      const link = document.createElement("a");
+      link.download = "gradient.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    }
+  </script>
+</body>
+</html>
